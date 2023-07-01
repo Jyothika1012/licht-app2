@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
@@ -12,60 +11,144 @@ class StopWatch extends StatefulWidget {
 }
 
 class _StopWatchState extends State<StopWatch> {
-  Timer? timer;
-  Duration duration = Duration();
-
+  String hoursString = "00", minuteString = "00", secondString = "00";
+  int hours = 0, minutes = 0, seconds = 0;
+  bool isTimerRunning = false, isResetButtonVisible = false;
+  late Timer _timer;
   @override
   void initState() {
     super.initState();
-
-    startTime();
+    startTimer();
   }
 
-  void addTime() {
-    final addSeconds = 1;
-
+  void startTimer() {
     setState(() {
-      final seconds = duration.inSeconds + addSeconds;
-
-      duration = Duration(seconds: seconds);
+      isTimerRunning = true;
+    });
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      _startSecond();
     });
   }
 
-  void startTime() {
-    timer = Timer.periodic(Duration(seconds: 1), (_) => addTime());
+  void pauseTimer() {
+    _timer.cancel();
+    setState(() {
+      isTimerRunning = false;
+    });
+    isResetButtonVisible = checkValues();
+  }
+
+  void _startSecond() {
+    setState(() {
+      if (seconds < 59) {
+        seconds++;
+        secondString = seconds.toString();
+        if (secondString.length == 1) {
+          secondString = "0" + secondString;
+        }
+      } else {
+        _startMinutes();
+      }
+    });
+  }
+
+  void _startMinutes() {
+    setState(() {
+      if (minutes < 59) {
+        seconds = 0;
+        secondString = "00";
+        minutes++;
+        minuteString = minutes.toString();
+        if (minuteString.length == 1) {
+          minuteString = "0" + minuteString;
+        } else {
+          _starthours();
+        }
+      }
+    });
+  }
+
+  void _starthours() {
+    setState(() {
+      seconds = 0;
+      minutes = 0;
+      secondString = "00";
+      minuteString = "00";
+      hours++;
+      hoursString = hours.toString();
+      if (hoursString.length == 1) {
+        hoursString = "0" + hoursString;
+      }
+    });
+  }
+
+  void resetTimer() {
+    _timer.cancel();
+    setState(() {
+      seconds = 0;
+      minutes = 0;
+      hours = 0;
+      secondString = "00";
+      minuteString = "00";
+      hoursString = "00";
+      isResetButtonVisible = false;
+    });
+  }
+
+  bool checkValues() {
+    if (seconds != 0 || minutes != 0 || hours != 0) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(child: buildTime()),
-    );
-  }
-
-  Widget buildTime() {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final hours = twoDigits(duration.inHours);
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        buildTimeCard(time: hours, header: 'HOURS'),
-        const SizedBox(width: 8),
-        buildTimeCard(time: minutes, header: 'MINUTES'),
-        const SizedBox(width: 8),
-        buildTimeCard(time: seconds, header: 'SECONDS'),
-      ],
-    );
-  }
-
-  Widget buildTimeCard({required String time, required String header}) => Text(
-        time,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: const Icon(
+          Icons.menu,
           color: Colors.black,
-          fontSize: 72,
         ),
-      );
+        title: const Text(
+          "StopWatch",
+          style: TextStyle(color: Colors.black),
+        ),
+      ),
+      body: SizedBox(
+        width: double.infinity,
+        child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "$hoursString:$minuteString:$secondString",
+                style: TextStyle(fontSize: 50, fontWeight: FontWeight.w500),
+              ),
+              ElevatedButton(
+                  onPressed: () {
+                    if (isTimerRunning = true) {
+                      pauseTimer();
+                    } else {
+                      startTimer();
+                    }
+                  },
+                  child: Text(isTimerRunning ? "pause" : "play")),
+              isResetButtonVisible
+                  ? ElevatedButton(
+                      onPressed: () {
+                        resetTimer();
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(13.0),
+                        child: Text("Reset"),
+                      ),
+                    )
+                  : SizedBox(),
+            ]),
+      ),
+    );
+  }
 }
